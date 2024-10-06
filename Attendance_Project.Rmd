@@ -1,0 +1,49 @@
+---
+title: "Attendance_Project"
+author: "Shana Mandelbaum"
+date: "2024-08-20"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+attendance_data <- read.csv("Attendance_data.csv")
+```
+
+```{r}
+attendance_data_info <- attendance_data |> 
+  select("Student.ID", "Attendance.Date", "Attendance.Code", "Class.Section.ID", "Excused", "Faculty.ID", "Subject.ID")
+```
+
+```{r}
+attendance_data_info <- attendance_data_info |> 
+  mutate(Excused = ifelse(Excused == "Yes", "Yes", "No"))
+```
+
+```{r}
+attendance_data_absences_lates <- attendance_data_info |> 
+  group_by(Student.ID) |> 
+  summarise(Unexcused_Absences = sum(Attendance.Code == "Absent" & Excused == "No"),
+            Unexcused_Lates = sum(Attendance.Code == "Late" & Excused == "No"))
+```
+
+```{r}
+conduct_grades <- read.csv("Grades.csv")
+conduct_grades <- conduct_grades |> 
+  rename("Student.ID" = "Name")
+```
+
+```{r}
+grades_joined_absences <- conduct_grades |> 
+  left_join(attendance_data_absences_lates)
+```
+
+```{r}
+final_grade <- grades_joined_absences |> 
+  mutate(final_conduct_grade = Conduct.Grade - Unexcused_Absences - Unexcused_Lates) |> 
+  select(Student.ID, final_conduct_grade)
+```
+
